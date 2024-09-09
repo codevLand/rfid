@@ -12,7 +12,7 @@
 3. Libraries for ESP32
 
 ### Task List:
-- [] Connect the components to the ESP32 and make them communicate to each
+- [ ] Connect the components to the ESP32 and make them communicate to each
 other
 - [] Connect the ESP32 to the WiFI
 - [] (Optional) Port Forward the ESP32 from the router for web access/mobile
