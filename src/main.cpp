@@ -12,7 +12,7 @@
 MFRC522 rfid(SS_PIN, RST_PIN);
 Hashtable<String, u8_t> AuthorizedRFIDs;
 const char* ssid = "Moorse";
-const char* password = "Donttrust@nyone1";
+const char* password = "WIFI_PASSWORD";
 const char* hostname = "esp32-rfid-access_control";
 const char* apiServer = "https://fake-json-api.mock.beeceptor.com/users";
 
