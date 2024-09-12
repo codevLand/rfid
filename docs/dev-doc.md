@@ -12,12 +12,15 @@
 3. Libraries for ESP32
 
 ### Task List:
-- [ ] Connect the components to the ESP32 and make them communicate to each
+- [x] Connect the components to the ESP32 and make them communicate to each
 other
-- [ ] Connect the ESP32 to the WiFI
+- [x] Connect the ESP32 to the WiFI
 - [ ] (Optional) Port Forward the ESP32 from the router for web access/mobile
 app access
+- [ ] Set up RFID cards - 2 cards with the same UID per room/tenant (1 main
+key, 1 backup)
 - [ ] Make an API for database
+    * [ ] Make a registration API for RFID Cards
 - [ ] Make a User Database access of the gate
 - [ ] Filter out the Admin and User Account
 
