@@ -45,8 +45,10 @@ key, 1 backup)
     digitalWrite(BUZZER_PIN, LOW); 
    }
    ```
+
 2. Initialized the RFID for giving access to the user/tenants of the boarding
    house.
+   TODO: Need to set up the Database for the Tenants only access
    ```c++
    #include <Arduino.h>
    #include <SPI.h>
@@ -63,3 +65,61 @@ key, 1 backup)
     rfid.PCD_Init(); // init MFRC522
    }
    ```
+
+3. Initialized the LCD Display for User Interface
+    ```C++
+    #include <Wire.h>
+    #include <LiquidCrystal_I2C.h> 
+    #include <Arduino.h>
+    #include <SPI.h>
+
+    #define LCD_SCL_PIN 33 // ESP32 pin GPIO33
+    #define LCD_SDA_PIN 21 // ESP32 pin GPIO21
+
+    LiquidCrystal_I2C lcd(0x27,20,4);
+
+    void setup () {
+      Wire.begin(LCD_SDA_PIN, LCD_SCL_PIN);
+      lcd.init();
+      lcd.clear();         
+      lcd.backlight();
+
+      lcd.setCursor(0, 0);
+      lcd.print("SCAN RFID");
+    }
+    ```
+
+4. Initialized Relay Module for using the Elecronic Solenoid LOCK
+    ```C++
+    #include <Arduino.h>
+    #include <SPI.h>
+    #include <MFRC522.h>
+    
+    #define RELAY_PIN 27 // ESP32 pin GPIO27
+    
+    void setup () {
+        pinMode(RELAY_PIN, OUTPUT);
+        digitalWrite(RELAY_PIN, LOW);
+    }
+    ```
+
+5. Initialized the connection WiFi
+    ```C++
+    #include <WiFi.h>
+
+    void initWiFi() {
+        WiFi.mode(WIFI_STA);
+        WiFi.config(INADDR_NONE, INADDR_NONE, INADDR_NONE, INADDR_NONE);
+        WiFi.setHostname(hostname);
+
+        WiFi.begin(ssid, password);
+        Serial.print("Connecting to WiFi...");
+        while (WiFi.status() != WL_CONNECTED) {
+        Serial.print('.');
+        delay(1000);
+    }
+
+    void setup () {
+        initWiFi();
+    }
+    ```
