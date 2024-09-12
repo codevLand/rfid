@@ -49,8 +49,8 @@ void setup () {
   lcd.clear();         
   lcd.backlight(); 
 
-  lcd.setCursor(0, 0);
-  lcd.print("SCAN RFID");
+  lcd.setCursor(1, 0);
+  lcd.print("SCAN YOUR KEYCARD!");
 
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, LOW);
@@ -63,19 +63,27 @@ void loop () {
     if (rfid.PICC_ReadCardSerial()) { // NUID has been readed
 
       if (!isAuthorized()) { 
-        lcd.setCursor(1, 5);
-        lcd.print("DENIED");
+        lcd.setCursor(3, 2);
+        lcd.print("ACCESS  DENIED");
         delay(500);
         lcd.clear();
-        AuthorizedRFIDs.put(readKeyCard_asHex(), 1); 
+        delay(1000);
+        lcd.setCursor(1, 0);
+        lcd.print("SCAN YOUR KEYCARD!");
+        // AuthorizedRFIDs.put(readKeyCard_asHex(), 1); 
       } else {
-        lcd.setCursor(1, 5);
-        lcd.print("AUTHORIZED");
+        lcd.setCursor(3, 2);
+        lcd.print("ACCESS GRANTED");
+        lcd.setCursor(6, 3);
+        lcd.print("WELCOME!");
         delay(1000);
         lcd.clear();
         digitalWrite(RELAY_PIN, HIGH);
-        delay(750);
+        delay(2000);
         digitalWrite(RELAY_PIN, LOW);
+        delay(1000);
+        lcd.setCursor(1, 0);
+        lcd.print("SCAN YOUR KEYCARD!");
       }
       getRegisteredUIDs();
 
