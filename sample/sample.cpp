@@ -3,11 +3,11 @@
 #include <MFRC522.h>
 #include <Wire.h>
 #include <Hashtable.h>
-#include <LiquidCrystal_12C.h>
+#include <LiquidCrystal_I2C.h>
 
-#include <WebServer.h> // GET THE WEBSERVER LIBRARY
+#include <ESPAsyncWebServer.h> // GET THE WEBSERVER LIBRARY
 #include <RTClib.h> // GET THE RTC (Real-Time Clock) LIBRARY
-#include <SD.h> // GET THE SD CARD LIBRARY
+// #include <SD.h> // GET THE SD CARD LIBRARY
 
 #define RELAY_PIN 27 // ESP32 pin GPIO27
 
@@ -20,15 +20,18 @@
 // #define PROXIMITY_PIN "wherever this pin goes" // ESP32 pin GPIO`
 // #define SD_PIN "wherever this pin goes" // ESP32 pin GPIO
 
-const char* ssid = "WIFI_SSID";
-const char* password = "WIFI_PASSWORD";
+const char* ssid = "Moorse";
+const char* password = "Donttrust@nyone1";
 const char* hostname = "esp32-rfid-access-control";
 
 // INITIATE WEB SEVER
-WebServer server(80); // 192.168.1.25:80 OR localhost:80
+AsyncWebServer server(80); // 192.168.1.25:80 OR localhost:80
 
 // INITIATE RFID
 MFRC522 rfid(RFID_SDA_PIN, RFID_RST_PIN);
+
+// INITIATE LCD
+LiquidCrystal_I2C lcd(0x27,20,4);
 
 // INITIATE HASHTABLE
 Hashtable<String, uint8_t> AuthorizedRFIDs;
@@ -37,7 +40,7 @@ Hashtable<String, uint8_t> AuthorizedRFIDs;
 // RTC_DS3231 rtc; 
 
 // INITIATE FILE LOGGING
-FILE logFile;
+// FILE logFile;
 
 // INITIATE PROXIMITY STATE
 bool gateOpen = false;
@@ -65,9 +68,9 @@ void initRelay () {
   digitalWrite(RELAY_PIN, LOW);
 }
 
-void initProximity () {
-  pinMode(PROXIMITY_PIN, INPUT);
-}
+// void initProximity () {
+//   pinMode(PROXIMITY_PIN, INPUT);
+// }
 
 void initLCD () {
   Wire.begin(LCD_SDA_PIN,LCD_SCL_PIN);
@@ -92,7 +95,7 @@ void initLCD () {
 String readKeyCard_asHex () {
   String RFID = "";
   for (byte i = 0; i < rfid.uid.size; i++) {
-    RFID = RFID + String(rfid.uid.uidByte[i]), HEX);
+    RFID = RFID + String(rfid.uid.uidByte[i], HEX);
   }
 
   return RFID;
@@ -148,33 +151,37 @@ void checkRFID () {
     } else {
       unlockGate();
     }
+
+    rfid.PICC_HaltA(); // halt PICC
+    rfid.PCD_StopCrypto1(); // stop encryption on PCD
+
   } else {
     return;
   }
 }
 
-void handleRoot () {
-  String html = "<html><body><h1>Gate Control<h1>";
-  html += "<button onclick=\"location.href='/unlock'\">Unlock Gate</button>";
-  html += "<button onclick=\"location.href='/register'\">Register Card</button>";
-  html += "</body></html>";
+// void handleRoot () {
+//   String html = "<html><body><h1>Gate Control<h1>";
+//   html += "<button onclick=\"location.href='/unlock'\">Unlock Gate</button>";
+//   html += "<button onclick=\"location.href='/register'\">Register Card</button>";
+//   html += "</body></html>";
 
-  server.send(200, "text/html", html);
-}
+//   request->send(200, "text/html", html);
+// }
 
-void handleUnlock () {
-  unlockGate();
-  server.send(200, "text/html", "Gate Unlocked");
-}
+// void handleUnlock () {
+//   unlockGate();
+//   request->send(200, "text/html", "Gate Unlocked");
+// }
 
-void handleRegister () {
-  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
-    if (!isAuthorized()) {
-      AuthorizedRFIDs.put(readKeyCard_asHex(), "Guest");
-    }
-  }
-  server.send(200, "text/html", "Register Card");
-}
+// void handleRegister () {
+//   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+//     if (!isAuthorized()) {
+//       AuthorizedRFIDs.put(readKeyCard_asHex(), 3);
+//     }
+//   }
+//   request->send(200, "text/html", "Register Card");
+// }
 
 
 
@@ -205,23 +212,43 @@ void handleRegister () {
 /*}*/
 
 void setup () {
-  Serial.begin(115200);
+  Serial.begin(9600);
   SPI.begin();
   rfid.PCD_Init();
+  initWiFi();
 
   // SETUP WEBSER
-  server.on("/", handleRoot);
-  server.on("/unlock", handleUnlock);
-  server.on("/register", handleRegister);
+  server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+    String html = "<html><body><h1>Gate Control<h1>";
+    html += "<button onclick=\"location.href='/unlock'\">Unlock Gate</button>";
+    html += "<button onclick=\"location.href='/register'\">Register Card</button>";
+    html += "</body></html>";
+
+    request->send(200, "text/html", html);
+  });
+  server.on("/unlock", HTTP_GET, [](AsyncWebServerRequest* request) {
+    unlockGate();
+    request->send(200, "text/html", "Gate Unlocked");
+  });
+  server.on("/register", HTTP_GET, [](AsyncWebServerRequest* request) {
+    if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+      if (!isAuthorized()) {
+        AuthorizedRFIDs.put(readKeyCard_asHex(), 3);
+      }
+
+      rfid.PICC_HaltA(); // halt PICC
+      rfid.PCD_StopCrypto1(); // stop encryption on PCD  
+    }
+    request->send(200, "text/html", "Register Card");
+  });
   server.begin();
 
-  initWiFi();
   initLCD();
   initRelay();
   /*initRTC();*/
   /*initProximity();*/
 
-  AuthorizedRFIDs.put("837b9ee4", "Administrator");
+  AuthorizedRFIDs.put("837b9ee4", 0);
 }
 
 void loop () {
