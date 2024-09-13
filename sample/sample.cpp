@@ -79,17 +79,17 @@ void initLCD () {
   lcd.print("SCAN YOU KEYCARD!");
 }
 
-void initRTC () {
-  if (!rct.begin()) {
-    Serial.println("Couldn't find RTC");
-    while(1);
-  }
-  if (rtc.lostPower()) {
-    rtc.adjust(DateTime(F(__Date__), F(__Time__)));
-  }
-}
+/*void initRTC () {*/
+/*  if (!rct.begin()) {*/
+/*    Serial.println("Couldn't find RTC");*/
+/*    while(1);*/
+/*  }*/
+/*  if (rtc.lostPower()) {*/
+/*    rtc.adjust(DateTime(F(__Date__), F(__Time__)));*/
+/*  }*/
+/*}*/
 
-void readKeyCard_asHex () {
+String readKeyCard_asHex () {
   String RFID = "";
   for (byte i = 0; i < rfid.uid.size; i++) {
     RFID = RFID + String(rfid.uid.uidByte[i]), HEX);
@@ -113,7 +113,7 @@ void getRegisteredUIDs () {
 }
 
 // CHECK IF RFID IS AUTHORIZED
-void isAuthorized () {
+bool isAuthorized () {
   return AuthorizedRFIDs.exists(readKeyCard_asHex());
 }
 
@@ -159,7 +159,7 @@ void handleRoot () {
   html += "<button onclick=\"location.href='/register'\">Register Card</button>";
   html += "</body></html>";
 
-  server.send(200, "text/html", html)
+  server.send(200, "text/html", html);
 }
 
 void handleUnlock () {
@@ -168,56 +168,58 @@ void handleUnlock () {
 }
 
 void handleRegister () {
-  if (rfid.PICC_IsNewCardPresent && rfid.PICC_ReadCardSerial) {
+  if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
     if (!isAuthorized()) {
-      AuthorizedRFIDs.put(readKeyCard_asHex, "Guest");
+      AuthorizedRFIDs.put(readKeyCard_asHex(), "Guest");
     }
   }
-  server.send(200, "text/html", "Register Card")
+  server.send(200, "text/html", "Register Card");
 }
 
-// SETUP WEBSER
-server.on("/", handleRoot);
-server.on("/unlock", handleUnlock);
-server.on("/register", handleRegister);
-server.begin();
 
-void logEvent (String event) {
-  DateTime now = rtc.now();
-  String log = String(now.timestamp()) + ": " + event;
-  Serial.println(log);
 
-  logFile = SD.open("/log.txt", FILE_APPEND);
-  if (logFile) {
-    logFile.println(log);
-    logFile.close();
-  } else {
-    Serial.print("Error opening log file");
-  }
-}
-
-void checkProximity () {
-  if (digitalRead(PROXIMITY_PIN) == HIGH && !gateOpen) {
-    gateOpen = true;
-    gateOpenTime = millis();
-    logEvent("Gate Open");
-  } else if (digitalRead(PROXIMITY_PIN) == LOW && gateOpen) {
-    gateOpen = false;
-    unsigned long openDuration = millis() - gateOpenTime;
-    logEvent("Gate Closed, Open Duration: " + String(openDuration / 1000 ) + "s");
-  }
-}
+/*void logEvent (String event) {*/
+/*  DateTime now = rtc.now();*/
+/*  String log = String(now.timestamp()) + ": " + event;*/
+/*  Serial.println(log);*/
+/**/
+/*  logFile = SD.open("/log.txt", FILE_APPEND);*/
+/*  if (logFile) {*/
+/*    logFile.println(log);*/
+/*    logFile.close();*/
+/*  } else {*/
+/*    Serial.print("Error opening log file");*/
+/*  }*/
+/*}*/
+/**/
+/*void checkProximity () {*/
+/*  if (digitalRead(PROXIMITY_PIN) == HIGH && !gateOpen) {*/
+/*    gateOpen = true;*/
+/*    gateOpenTime = millis();*/
+/*    logEvent("Gate Open");*/
+/*  } else if (digitalRead(PROXIMITY_PIN) == LOW && gateOpen) {*/
+/*    gateOpen = false;*/
+/*    unsigned long openDuration = millis() - gateOpenTime;*/
+/*    logEvent("Gate Closed, Open Duration: " + String(openDuration / 1000 ) + "s");*/
+/*  }*/
+/*}*/
 
 void setup () {
   Serial.begin(115200);
   SPI.begin();
   rfid.PCD_Init();
 
+  // SETUP WEBSER
+  server.on("/", handleRoot);
+  server.on("/unlock", handleUnlock);
+  server.on("/register", handleRegister);
+  server.begin();
+
   initWiFi();
   initLCD();
   initRelay();
-  initRTC();
-  initProximity();
+  /*initRTC();*/
+  /*initProximity();*/
 
   AuthorizedRFIDs.put("837b9ee4", "Administrator");
 }
