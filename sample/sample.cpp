@@ -21,7 +21,7 @@
 // #define SD_PIN "wherever this pin goes" // ESP32 pin GPIO
 
 const char* ssid = "Moorse";
-const char* password = "Donttrust@nyone1";
+const char* password = "WIFI_PASSWORD";
 const char* hostname = "esp32-rfid-access-control";
 
 // INITIATE WEB SEVER
