@@ -19,7 +19,7 @@ other
 app access
 - [ ] Set up RFID cards - 2 cards with the same UID per room/tenant (1 main
 key, 1 backup)
-- [ ] Make an API for database
+- [x] Make an API for database
     * [ ] Make a registration API for RFID Cards
 - [ ] Make a User Database access of the gate
 - [ ] Filter out the Admin and User Account
@@ -121,5 +121,43 @@ key, 1 backup)
 
     void setup () {
         initWiFi();
+    }
+    ```
+
+6. Initialized the API for Web Server
+    ```c++
+    #include <ESPAsyncWebServer.h> 
+    const char* ssid = "Moorse";
+    const char* password = "WIFI_PASSWORD";
+
+    AsyncWebServer server(80);
+
+    void setup () {
+      Serial.begin(9600);
+
+      server.on("/", HTTP_GET, [](AsyncWebServerRequest* request) {
+        String html = "<html><body><h1>Gate Control<h1>";
+        html += "<button onclick=\"location.href='/unlock'\">Unlock Gate</button>";
+        html += "<button onclick=\"location.href='/register'\">Register Card</button>";
+        html += "</body></html>";
+
+        request->send(200, "text/html", html);
+      });
+      server.on("/unlock", HTTP_GET, [](AsyncWebServerRequest* request) {
+        unlockGate();
+        request->send(200, "text/html", "Gate Unlocked");
+      });
+      server.on("/register", HTTP_GET, [](AsyncWebServerRequest* request) {
+        if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
+          if (!isAuthorized()) {
+            AuthorizedRFIDs.put(readKeyCard_asHex(), 3);
+          }
+
+          rfid.PICC_HaltA(); // halt PICC
+          rfid.PCD_StopCrypto1(); // stop encryption on PCD  
+        }
+        request->send(200, "text/html", "Register Card");
+      });
+      server.begin();
     }
     ```
